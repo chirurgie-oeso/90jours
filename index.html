@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nomogramme interactif pour la mortalité à 90 jours après œsophagectomie</title>
+<style>
+  :root{
+    --ink:#1a2332; --ink-soft:#5b6472; --line:#dde1e7; --line-soft:#eef0f3;
+    --paper:#ffffff; --paper-soft:#f7f8fa;
+    --axis:#1F3864;
+    --low:#0f6e56; --low-bg:#e1f5ee;
+    --mid:#854f0b; --mid-bg:#faeeda;
+    --high:#a32d2d; --high-bg:#fcebeb;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:Calibri,'Carlito',-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--paper-soft);color:var(--ink);}
+  .wrap{max-width:780px;margin:0 auto;padding:32px 24px 56px;}
+  .kicker{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);font-weight:600;margin:0 0 4px;}
+  h1{font-size:21px;font-weight:600;margin:0 0 6px;}
+  .sub{font-size:13.5px;color:var(--ink-soft);margin:0 0 26px;line-height:1.5;max-width:640px;}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:24px 26px;margin-bottom:18px;}
+  .card h2{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);font-weight:700;margin:0 0 18px;padding-bottom:10px;border-bottom:1px solid var(--line-soft);}
+  .row{display:grid;grid-template-columns:190px 1fr 60px 66px;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line-soft);}
+  .row:last-child{border-bottom:none;}
+  .row label{font-size:13.5px;font-weight:500;}
+  .row .hint{display:block;font-size:11px;color:var(--ink-soft);font-weight:400;}
+  input[type=range]{width:100%;accent-color:var(--axis);}
+  select{width:100%;font-size:13px;padding:7px 8px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink);font-family:inherit;}
+  .val{font-size:14px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums;}
+  .pts{font-size:12.5px;font-weight:600;text-align:right;color:var(--axis);}
+  .total-card{display:flex;align-items:center;gap:22px;}
+  .total-num{font-size:32px;font-weight:700;color:var(--axis);min-width:76px;font-variant-numeric:tabular-nums;}
+  .total-detail{flex:1;font-size:12.5px;color:var(--ink-soft);line-height:1.6;}
+  .result{display:grid;grid-template-columns:1fr auto;align-items:center;gap:18px;padding:20px 24px;border-radius:10px;}
+  .result-label{font-size:12px;text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin:0 0 5px;}
+  .result-sub{font-size:12.5px;line-height:1.5;}
+  .result-num{font-size:38px;font-weight:700;font-variant-numeric:tabular-nums;}
+  .foot{font-size:11px;color:var(--ink-soft);line-height:1.6;margin-top:20px;padding-top:14px;border-top:1px solid var(--line);}
+  .foot b{color:var(--ink);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="kicker">Outil d'aide à la décision, usage pré-anesthésique</p>
+  <h1>Nomogramme interactif, risque de mortalité à 90 jours</h1>
+
+  <div class="card">
+    <h2>Renseigner les 5 variables du patient</h2>
+    <div class="row">
+      <label>Âge à la chirurgie<span class="hint">années</span></label>
+      <input type="range" id="s_age" min="20" max="90" value="65" step="1">
+      <div class="val" id="v_age">65</div><div class="pts" id="p_age">0</div>
+    </div>
+    <div class="row">
+      <label>Score ASA<span class="hint">1 à 5</span></label>
+      <input type="range" id="s_asa" min="1" max="5" value="2" step="1">
+      <div class="val" id="v_asa">2</div><div class="pts" id="p_asa">0</div>
+    </div>
+    <div class="row">
+      <label>Statut OMS<span class="hint">0 à 3</span></label>
+      <input type="range" id="s_oms" min="0" max="3" value="0" step="1">
+      <div class="val" id="v_oms">0</div><div class="pts" id="p_oms">0</div>
+    </div>
+    <div class="row">
+      <label>Consommation d'alcool<span class="hint">oui / non</span></label>
+      <select id="s_oh"><option value="0">Non</option><option value="1">Oui</option></select>
+      <div class="val" id="v_oh">Non</div><div class="pts" id="p_oh">0</div>
+    </div>
+    <div class="row">
+      <label>Tabagisme<span class="hint">paquets-année (0 si non-fumeur)</span></label>
+      <input type="range" id="s_pa" min="0" max="100" value="10" step="1">
+      <div class="val" id="v_pa">10</div><div class="pts" id="p_pa">0</div>
+    </div>
+  </div>
+
+  <div class="card total-card">
+    <div class="total-num" id="total_pts">0</div>
+    <div class="total-detail"><b style="color:var(--ink);">Total des points</b><br>Somme des points de chaque variable, convertie en probabilité ci-dessous.</div>
+  </div>
+
+  <div class="card result" id="result_card">
+    <div><p class="result-label" id="result_label">Risque</p><p class="result-sub" id="result_sub">...</p></div>
+    <div class="result-num" id="result_num">...</div>
+  </div>
+
+  <p class="foot">
+    Modèle développé sur la cohorte FREGAT (French REsearch Group on oesophageal and Gastric cancer Analysis and Treatment), 1601 patients, 108 décès à 90 jours. AUC en validation croisée à 5 plis : 0,715 (± 0,038). Trois bandes de risque : faible (&lt; 5 %, VPN 96,4 %), intermédiaire (5–15 %), élevé (≥ 15 %), établies sur le taux de décès réellement observé dans chaque bande.
+    <b>Outil d'aide à la décision, à utiliser en complément du jugement clinique. Ne remplace pas une évaluation gériatrique ou anesthésique complète.</b>
+    Issu de la thèse d'exercice de médecine de Hadi Barakat (CHU Besançon).
+  </p>
+</div>
+
+<script>
+const COEF = { age:0.0239, asa:0.7179, oms:0.6970, oh:0.6274, pa:0.0031 };
+const RANGE = { age:[20,90], asa:[1,5], oms:[0,3], oh:[0,1], pa:[0,100] };
+const INTERCEPT = -6.4843;
+
+const pointRange = {};
+let maxKey = null, maxVal = -1;
+for (const k in COEF){
+  const r = COEF[k]*(RANGE[k][1]-RANGE[k][0]);
+  pointRange[k]=r;
+  if (r>maxVal){maxVal=r;maxKey=k;}
+}
+const SCALE = 100/pointRange[maxKey];
+let baselineLogit = INTERCEPT;
+for (const k in COEF) baselineLogit += COEF[k]*RANGE[k][0];
+
+function pointsFor(key, value){ return COEF[key]*(value-RANGE[key][0])*SCALE; }
+function fmt1(n){ return (Math.round(n*10)/10).toFixed(1); }
+
+function update(){
+  const age = +document.getElementById('s_age').value;
+  const asa = +document.getElementById('s_asa').value;
+  const oms = +document.getElementById('s_oms').value;
+  const oh = +document.getElementById('s_oh').value;
+  const pa = +document.getElementById('s_pa').value;
+
+  document.getElementById('v_age').textContent = age;
+  document.getElementById('v_asa').textContent = asa;
+  document.getElementById('v_oms').textContent = oms;
+  document.getElementById('v_oh').textContent = oh? 'Oui':'Non';
+  document.getElementById('v_pa').textContent = pa;
+
+  const vals = {age,asa,oms,oh,pa};
+  let total = 0;
+  for (const k in COEF){
+    const pts = pointsFor(k, vals[k]);
+    total += pts;
+    document.getElementById('p_'+k).textContent = fmt1(pts);
+  }
+  document.getElementById('total_pts').textContent = fmt1(total);
+
+  const logit = baselineLogit + total/SCALE;
+  const prob = 1/(1+Math.exp(-logit));
+  const pct = Math.round(prob*1000)/10;
+
+  const resultCard = document.getElementById('result_card');
+  const resultLabel = document.getElementById('result_label');
+  const resultSub = document.getElementById('result_sub');
+  const resultNum = document.getElementById('result_num');
+  resultNum.textContent = pct + ' %';
+
+  let band, bandColor, bandBg, bandText;
+  if (pct < 5){ band='Risque faible'; bandColor='var(--low)'; bandBg='var(--low-bg)'; bandText='Profil compatible avec une prise en charge standard.'; }
+  else if (pct < 15){ band='Risque intermédiaire'; bandColor='var(--mid)'; bandBg='var(--mid-bg)'; bandText='Optimisation pré-opératoire à envisager.'; }
+  else { band='Risque élevé'; bandColor='var(--high)'; bandBg='var(--high-bg)'; bandText='Réévaluation de la stratégie thérapeutique et préhabilitation renforcée à discuter.'; }
+
+  resultCard.style.background = bandBg;
+  resultLabel.style.color = bandColor;
+  resultNum.style.color = bandColor;
+  resultLabel.textContent = band;
+  resultSub.textContent = bandText;
+  resultSub.style.color = 'var(--ink)';
+}
+
+['s_age','s_asa','s_oms','s_oh','s_pa'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', update);
+});
+update();
+</script>
+</body>
+</html>
